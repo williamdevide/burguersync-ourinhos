@@ -28,3 +28,13 @@ Este documento registra cronologicamente todas as instruções, solicitações e
   - `README.md` moderno e bilíngue (PT-BR / EN) com badges e referências ao Google Antigravity e SENAI.
   - Repositório remoto publicado: [https://github.com/williamdevide/burguersync-ourinhos](https://github.com/williamdevide/burguersync-ourinhos)
   - Deploy no GitHub Pages: [https://williamdevide.github.io/burguersync-ourinhos/](https://williamdevide.github.io/burguersync-ourinhos/)
+
+---
+
+### Prompt 2 (Execução Local)
+```text
+execuite localmente esse projeto
+```
+* **Data/Hora:** 2026-09-26 12:14:50
+* **Camada:** Layer 3 (Execução Determinística)
+* **Objetivo:** Inicialização de servidor HTTP local para testes e pré-visualização em tempo real da aplicação no navegador.
