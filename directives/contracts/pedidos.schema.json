@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PedidoBurguerSync",
+  "description": "Contrato de dados canônico para a coleção pedidos no Firebase Firestore",
+  "type": "object",
+  "required": ["cliente", "itens", "pagamento", "valores", "status"],
+  "properties": {
+    "cliente": {
+      "type": "object",
+      "required": ["nome", "celular", "endereco"],
+      "properties": {
+        "nome": { "type": "string", "minLength": 2 },
+        "email": { "type": "string" },
+        "celular": { "type": "string", "minLength": 8 },
+        "endereco": { "type": "string", "minLength": 5 },
+        "obsEntrega": { "type": "string" }
+      }
+    },
+    "itens": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["nome", "preco", "quantidade"],
+        "properties": {
+          "id": { "type": "string" },
+          "nome": { "type": "string", "minLength": 1 },
+          "preco": { "type": "number", "minimum": 0 },
+          "quantidade": { "type": "integer", "minimum": 1 },
+          "obsItem": { "type": "string" }
+        }
+      }
+    },
+    "pagamento": {
+      "type": "object",
+      "required": ["metodo"],
+      "properties": {
+        "metodo": {
+          "type": "string",
+          "enum": ["Pix", "Cartao_Entrega", "Dinheiro_Entrega", "pix", "card", "cash"]
+        },
+        "troco": { "type": ["number", "string", "null"] }
+      }
+    },
+    "valores": {
+      "type": "object",
+      "required": ["subtotal", "taxaEntrega", "total"],
+      "properties": {
+        "subtotal": { "type": "number", "minimum": 0 },
+        "taxaEntrega": { "type": "number", "minimum": 0 },
+        "total": { "type": "number", "minimum": 0 }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["Recebido", "Em Preparo", "Saiu para Entrega", "Entregue"]
+    },
+    "horario": {
+      "type": ["object", "string", "null"]
+    }
+  }
+}

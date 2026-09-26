@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>BurguerSync Ourinhos - Cardápio Digital & KDS Realtime</title>
+  <meta name="description" content="BurguerSync Ourinhos - Hamburgueria artesanal com sincronização de pedidos e KDS da cozinha em tempo real via Firebase." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "bg-base": "#0C0C0E",
+            "bg-surface-1": "#16161A",
+            "bg-surface-2": "#222227",
+            "surface-container": "#1f1f23",
+            "surface-container-high": "#2a292e",
+            "surface-container-highest": "#353439",
+            "surface-container-lowest": "#0e0e12",
+            "border-subtle": "#2E2E36",
+            "border-focus": "#FF9E00",
+            "primary-container": "#FF7A00",
+            "accent-orange-hover": "#FF9E00",
+            "accent-yellow-neon": "#FFD000",
+            "secondary": "#00E676",
+            "accent-green-hover": "#00C853",
+            "status-purple": "#9D4EDD",
+            "status-blue": "#2979FF",
+            "text-primary": "#F4F4F6",
+            "text-secondary": "#A1A1AA",
+            "text-muted": "#63636E",
+            "on-primary": "#FFFFFF",
+            "on-secondary": "#0C0C0E"
+          },
+          borderRadius: {
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "3xl": "1.5rem"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            display: ["Plus Jakarta Sans", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="./styles/custom.css" />
+</head>
+<body class="bg-bg-base font-sans text-text-primary antialiased min-h-screen flex flex-col">
+
+  <!-- TOP HEADER -->
+  <header class="fixed top-0 w-full z-50 bg-bg-base/90 backdrop-blur-xl border-b border-border-subtle/50">
+    <div class="max-w-7xl mx-auto h-20 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <!-- Brand Logo -->
+      <div class="flex items-center gap-3 cursor-pointer" onclick="window.BurguerSync.switchView('cliente')">
+        <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center border border-border-subtle">
+          <span class="material-symbols-outlined text-primary-container text-[24px]">lunch_dining</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-display font-bold text-lg text-text-primary tracking-tight">
+            BurguerSync <span class="text-primary-container drop-shadow-[0_0_12px_rgba(255,122,0,0.5)]">Ourinhos</span>
+          </span>
+          <span class="text-[11px] text-text-secondary uppercase tracking-wider font-semibold">Artesanal &amp; Kitchen Sync</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs (SPA) -->
+      <nav class="hidden md:flex items-center bg-surface-container-lowest p-1 rounded-xl gap-1 border border-border-subtle/40">
+        <button type="button" data-nav-target="cliente" class="px-4 py-2 text-sm font-semibold rounded-lg flex items-center gap-1.5 transition-colors bg-surface-container-high text-primary-container">
+          <span class="material-symbols-outlined text-[18px]">restaurant_menu</span>
+          <span>Cardápio Digital</span>
+        </button>
+        <button type="button" data-nav-target="cozinha" class="px-4 py-2 text-sm font-semibold text-text-secondary hover:text-text-primary rounded-lg flex items-center gap-1.5 transition-colors">
+          <span class="material-symbols-outlined text-[18px]">skillet</span>
+          <span>Painel Cozinha (KDS)</span>
+          <span id="navKdsBadge" class="ml-1 px-1.5 py-0.5 rounded-full bg-primary-container text-white text-[10px] font-bold">0</span>
+        </button>
+        <button type="button" data-nav-target="rastreador" class="px-4 py-2 text-sm font-semibold text-text-secondary hover:text-text-primary rounded-lg flex items-center gap-1.5 transition-colors">
+          <span class="material-symbols-outlined text-[18px]">moped</span>
+          <span>Rastrear Pedido</span>
+        </button>
+      </nav>
+
+      <!-- Cart Button & Quick CTA -->
+      <div class="flex items-center gap-3">
+        <button aria-label="Sacola de Compras" onclick="window.BurguerSync.switchView('cliente')" class="relative p-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-border-subtle transition-all flex items-center justify-center text-text-primary" type="button">
+          <span class="material-symbols-outlined text-[22px]">shopping_bag</span>
+          <span id="headerCartCount" class="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-secondary text-on-secondary text-xs font-bold shadow-[0_0_8px_rgba(0,230,118,0.6)]">2</span>
+        </button>
+        <button type="button" onclick="window.BurguerSync.switchView('cozinha')" class="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary-container hover:bg-accent-orange-hover text-white text-xs font-bold transition-all shadow-[0_0_12px_rgba(255,122,0,0.3)]">
+          <span class="material-symbols-outlined text-[16px]">terminal</span>
+          <span>KDS Chapa</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main class="w-full pt-20 flex-1">
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 1: CLIENTE (CARDÁPIO & CHECKOUT)                                     -->
+    <!-- ========================================================================= -->
+    <div id="view-cliente" class="flex flex-col w-full">
+      <!-- Atmospheric Ambient Glow -->
+      <div class="relative w-full overflow-hidden">
+        <div class="absolute -top-32 -left-20 w-96 h-96 bg-primary-container/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute top-20 right-10 w-80 h-80 bg-status-purple/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Hero Section -->
+        <section class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-8">
+          <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+            <div class="max-w-2xl flex flex-col gap-3">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container border border-border-subtle w-fit">
+                <span class="w-2 h-2 rounded-full bg-secondary animate-ping"></span>
+                <span class="text-xs text-secondary uppercase font-bold tracking-widest">Cozinha Conectada em Tempo Real</span>
+              </div>
+              <h1 class="font-display font-extrabold text-3xl sm:text-4xl lg:text-5xl text-text-primary tracking-tight leading-tight">
+                O melhor <span class="text-primary-container drop-shadow-[0_0_20px_rgba(255,122,0,0.5)]">smash</span> burger artesanal de <span class="text-primary-container">Ourinhos</span>
+              </h1>
+              <p class="text-base text-text-secondary">
+                Pão brioche dourado na manteiga, carnes com crostinha crocante, queijo derretido e entrega rápida rastreada ao vivo.
+              </p>
+
+              <!-- Quick Badges -->
+              <div class="flex flex-wrap items-center gap-3 pt-2">
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-bg-surface-1 border border-border-subtle shadow-md">
+                  <span class="material-symbols-outlined text-accent-orange-hover text-[18px]">timer</span>
+                  <span class="text-xs font-bold text-text-primary">25-35 min</span>
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-bg-surface-1 border border-border-subtle shadow-md">
+                  <span class="material-symbols-outlined text-accent-yellow-neon text-[18px]">star</span>
+                  <span class="text-xs font-bold text-text-primary">4.9 <span class="text-text-muted font-normal">(1.2k avaliações)</span></span>
+                </div>
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-bg-surface-1 border border-border-subtle shadow-md">
+                  <span class="material-symbols-outlined text-secondary text-[18px]">two_wheeler</span>
+                  <span class="text-xs font-bold text-text-primary">Entrega Fixa: <span class="text-secondary font-bold">R$ 5,00</span></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Operational Capacity Bento Card -->
+            <div class="flex items-center gap-4 bg-bg-surface-1 p-4 rounded-2xl border border-border-subtle shadow-xl lg:self-center">
+              <div class="relative flex items-center justify-center w-12 h-12 rounded-xl bg-surface-container">
+                <svg class="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+                  <path class="text-surface-container-highest" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-width="3"></path>
+                  <path class="text-primary-container" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="78, 100" stroke-linecap="round" stroke-width="3.2"></path>
+                </svg>
+                <span class="absolute text-[11px] font-bold text-text-primary">78%</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="text-[10px] text-text-muted uppercase font-bold tracking-wider">Capacidade Operacional</span>
+                <span class="font-display font-bold text-sm text-text-primary">Ritmo Ideal de Saída</span>
+                <span class="text-xs text-secondary flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-secondary inline-block"></span> Chapa &amp; Cozinha Ativas
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Category Filters -->
+          <div class="mt-8 flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <button class="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 bg-primary-container text-white shadow-[0_0_16px_rgba(255,122,0,0.35)] flex items-center gap-1.5 whitespace-nowrap" data-filter="all" type="button">
+              <span class="material-symbols-outlined text-[18px]">restaurant_menu</span>
+              Todos os Pratos
+            </button>
+            <button class="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 bg-bg-surface-1 text-text-secondary hover:text-text-primary hover:bg-bg-surface-2 border border-border-subtle/50 flex items-center gap-1.5 whitespace-nowrap" data-filter="smash" type="button">
+              <span class="material-symbols-outlined text-[18px]">flatware</span>
+              Smash Burgers
+            </button>
+            <button class="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 bg-bg-surface-1 text-text-secondary hover:text-text-primary hover:bg-bg-surface-2 border border-border-subtle/50 flex items-center gap-1.5 whitespace-nowrap" data-filter="artesanais" type="button">
+              <span class="material-symbols-outlined text-[18px]">outdoor_grill</span>
+              Burgers Artesanais
+            </button>
+            <button class="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 bg-bg-surface-1 text-text-secondary hover:text-text-primary hover:bg-bg-surface-2 border border-border-subtle/50 flex items-center gap-1.5 whitespace-nowrap" data-filter="porcoes" type="button">
+              <span class="material-symbols-outlined text-[18px]">ramen_dining</span>
+              Porções &amp; Fritas
+            </button>
+            <button class="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 bg-bg-surface-1 text-text-secondary hover:text-text-primary hover:bg-bg-surface-2 border border-border-subtle/50 flex items-center gap-1.5 whitespace-nowrap" data-filter="bebidas" type="button">
+              <span class="material-symbols-outlined text-[18px]">local_drink</span>
+              Bebidas
+            </button>
+            <button class="px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 bg-bg-surface-1 text-text-secondary hover:text-text-primary hover:bg-bg-surface-2 border border-border-subtle/50 flex items-center gap-1.5 whitespace-nowrap" data-filter="sobremesas" type="button">
+              <span class="material-symbols-outlined text-[18px]">icecream</span>
+              Sobremesas
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Content Grid: Catalog (Left) + Integrated Cart & Checkout Drawer (Right) -->
+      <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- CATALOG SECTION -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+          <div class="flex items-center justify-between">
+            <h2 class="font-display font-bold text-xl text-text-primary tracking-tight">
+              Cardápio Oficial • <span class="text-text-secondary text-sm font-normal">Ourinhos / SP</span>
+            </h2>
+            <span class="text-xs text-primary-container uppercase font-bold tracking-wider px-2.5 py-1 rounded-full bg-surface-container border border-border-subtle">
+              6 Itens Selecionados
+            </span>
+          </div>
+
+          <!-- Product Cards Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <!-- Product 1: Ourinhos Smash Burguer -->
+            <div class="product-card group relative bg-bg-surface-1 rounded-2xl overflow-hidden border border-border-subtle shadow-lg hover:border-primary-container/60 hover:shadow-[0_0_24px_rgba(255,122,0,0.2)] transition-all duration-300 flex flex-col justify-between" data-category="smash">
+              <div class="relative w-full h-48 bg-surface-container overflow-hidden">
+                <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Ourinhos Smash Burguer" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBK0cS4u70ZGVu9aT8FxrUghRH5mqVNL-sCvbcg64oQ5cOzmkLQ6QD-196AV3wkwwWS3r_TaauExbFW5eEjanv86UGrNhDSSNYpGlNMdy9ejU0BINJJMP3V2yk481YVbIKywLX6D6tj8r2o1kZ3ASUaJ0y2onbOGfIWKaUZRlVEtk37Vlaor8tGK3LiXgn_2hGV8mXKXfi8xvq6h_pE6XFztYoaN10RrWOvbZMDCgaTIBTXeqf7ohE-hQ"/>
+                <div class="absolute inset-0 bg-gradient-to-t from-bg-surface-1 via-transparent to-black/30"></div>
+                <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-primary-container text-white text-[10px] font-bold shadow-[0_0_12px_rgba(255,122,0,0.6)] uppercase tracking-wider">
+                  Mais Pedido
+                </span>
+              </div>
+              <div class="p-4 flex flex-col flex-1 justify-between gap-3">
+                <div>
+                  <h3 class="font-display font-bold text-base text-text-primary group-hover:text-primary-container transition-colors">Ourinhos Smash Burguer</h3>
+                  <p class="mt-1 text-xs text-text-secondary line-clamp-2">
+                    Pão brioche selado na manteiga de garrafa, 2x smash burger de 80g, cheddar cremoso e fatias crocantes de bacon artesanal.
+                  </p>
+                </div>
+                <div class="pt-2 flex items-center justify-between border-t border-border-subtle/40">
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-text-muted uppercase font-bold">Preço</span>
+                    <span class="font-display font-bold text-lg text-primary-container">R$ 28,00</span>
+                  </div>
+                  <button class="px-3.5 py-2 rounded-xl bg-primary-container hover:bg-accent-orange-hover text-white text-xs font-bold shadow-md hover:shadow-[0_0_14px_rgba(255,122,0,0.4)] transition-all flex items-center gap-1 active:scale-95" onclick="window.BurguerSync.addToCart('Ourinhos Smash Burguer', 28.00, 'smash-1')" type="button">
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product 2: Monster Bacon SENAI -->
+            <div class="product-card group relative bg-bg-surface-1 rounded-2xl overflow-hidden border border-border-subtle shadow-lg hover:border-primary-container/60 hover:shadow-[0_0_24px_rgba(255,122,0,0.2)] transition-all duration-300 flex flex-col justify-between" data-category="artesanais">
+              <div class="relative w-full h-48 bg-surface-container overflow-hidden">
+                <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Monster Bacon SENAI" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHb1GLaNaNIB1251QBJExWzUhTMkZeJMc6gRZLIHfytDCRemC9HKCrHcOTAEF4uY3o8uP-bLgADB6idPez1bc4NBD4nYeVXi52lzJUKmiPEzavINoS6qSFQ_RXcr6H2rPTycVeINpd7zDjmlAiMtVKMIsWVIY7wqOhLRgUaqWonb3HNJ0lFTWRL_2_gp1oAXP9LpNz2LQ9OTqd_TDe5xDkiYWv1dcJVlGTcIjlZxyvgYBNxlzG5mL9KA"/>
+                <div class="absolute inset-0 bg-gradient-to-t from-bg-surface-1 via-transparent to-black/30"></div>
+                <span class="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-status-purple text-white text-[10px] font-bold shadow-[0_0_12px_rgba(157,78,221,0.6)] uppercase tracking-wider">
+                  Chef Especial SENAI
+                </span>
+              </div>
+              <div class="p-4 flex flex-col flex-1 justify-between gap-3">
+                <div>
+                  <h3 class="font-display font-bold text-base text-text-primary group-hover:text-primary-container transition-colors">Monster Bacon SENAI</h3>
+                  <p class="mt-1 text-xs text-text-secondary line-clamp-2">
+                    Pão australiano macio, 200g carne no fogo, cebola empanada (onion rings), muito bacon e molho secreto especial.
+                  </p>
+                </div>
+                <div class="pt-2 flex items-center justify-between border-t border-border-subtle/40">
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-text-muted uppercase font-bold">Preço</span>
+                    <span class="font-display font-bold text-lg text-primary-container">R$ 34,00</span>
+                  </div>
+                  <button class="px-3.5 py-2 rounded-xl bg-primary-container hover:bg-accent-orange-hover text-white text-xs font-bold shadow-md hover:shadow-[0_0_14px_rgba(255,122,0,0.4)] transition-all flex items-center gap-1 active:scale-95" onclick="window.BurguerSync.addToCart('Monster Bacon SENAI', 34.00, 'bacon-senai')" type="button">
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product 3: Batata Rústica Suprema -->
+            <div class="product-card group relative bg-bg-surface-1 rounded-2xl overflow-hidden border border-border-subtle shadow-lg hover:border-primary-container/60 hover:shadow-[0_0_24px_rgba(255,122,0,0.2)] transition-all duration-300 flex flex-col justify-between" data-category="porcoes">
+              <div class="relative w-full h-48 bg-surface-container overflow-hidden">
+                <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Batata Rústica Suprema" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6JLkQEvs1Tq_kHGk-xiBYbADZVw-GfKyxJfxjPOIb8WeBUI6hY-k9EUBkomtw8JlWj3ebtM6vo1PKK1_axcQhqgltFNsBunFkc2YceQCIHuNggGyXlxgU_4NVChn1A7nuWp39kMLW4UFeph2NxPrl9sfKC_VVraB53f6iXzudY2i7FYRCQmldhIgStHiRdaoWRSWLdORSEbTB2tnWnMCFLa6vdj0cYC7ijtUsEUyOVob0rZqlbeGwbQ"/>
+                <div class="absolute inset-0 bg-gradient-to-t from-bg-surface-1 via-transparent to-black/30"></div>
+              </div>
+              <div class="p-4 flex flex-col flex-1 justify-between gap-3">
+                <div>
+                  <h3 class="font-display font-bold text-base text-text-primary group-hover:text-primary-container transition-colors">Batata Rústica Suprema</h3>
+                  <p class="mt-1 text-xs text-text-secondary line-clamp-2">
+                    Corte rústico com casca, tempero de páprica defumada, coberta por cheddar cremoso derretido e farofa de bacon.
+                  </p>
+                </div>
+                <div class="pt-2 flex items-center justify-between border-t border-border-subtle/40">
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-text-muted uppercase font-bold">Preço</span>
+                    <span class="font-display font-bold text-lg text-primary-container">R$ 18,00</span>
+                  </div>
+                  <button class="px-3.5 py-2 rounded-xl bg-primary-container hover:bg-accent-orange-hover text-white text-xs font-bold shadow-md hover:shadow-[0_0_14px_rgba(255,122,0,0.4)] transition-all flex items-center gap-1 active:scale-95" onclick="window.BurguerSync.addToCart('Batata Rústica Suprema', 18.00, 'fries-rustica')" type="button">
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product 4: Double Cheddar Melt -->
+            <div class="product-card group relative bg-bg-surface-1 rounded-2xl overflow-hidden border border-border-subtle shadow-lg hover:border-primary-container/60 hover:shadow-[0_0_24px_rgba(255,122,0,0.2)] transition-all duration-300 flex flex-col justify-between" data-category="smash">
+              <div class="relative w-full h-48 bg-surface-container overflow-hidden">
+                <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Double Cheddar Melt" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNH4w15iwEOX7E5OUWq92XdY1hdkkbilLm2ZG4_C7FdJEPkka-TR6r0ZlyHdpPOV6Af_4vmNHepW6ZdIDr9nrPnhH51iWOeK9EA9s_i2zM06AnmJ6Y1zh6hFwlUQdKTeCs66gH-qAtW-k5Efd8xjtaKXL0A9VYug3QzdIJ-7jVqAlvcTmYF4wIsj2T3z_nJIhpewN3eLJrrl8Bjp_JsAhXXPKQB6e_VnW_obbF80g-TZhnS-qoT6MOzg"/>
+                <div class="absolute inset-0 bg-gradient-to-t from-bg-surface-1 via-transparent to-black/30"></div>
+              </div>
+              <div class="p-4 flex flex-col flex-1 justify-between gap-3">
+                <div>
+                  <h3 class="font-display font-bold text-base text-text-primary group-hover:text-primary-container transition-colors">Double Cheddar Melt</h3>
+                  <p class="mt-1 text-xs text-text-secondary line-clamp-2">
+                    Pão escuro com gergelim, 2x smash 120g, cebola caramelizada na cerveja preta e piscina generosa de cheddar quente.
+                  </p>
+                </div>
+                <div class="pt-2 flex items-center justify-between border-t border-border-subtle/40">
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-text-muted uppercase font-bold">Preço</span>
+                    <span class="font-display font-bold text-lg text-primary-container">R$ 32,00</span>
+                  </div>
+                  <button class="px-3.5 py-2 rounded-xl bg-primary-container hover:bg-accent-orange-hover text-white text-xs font-bold shadow-md hover:shadow-[0_0_14px_rgba(255,122,0,0.4)] transition-all flex items-center gap-1 active:scale-95" onclick="window.BurguerSync.addToCart('Double Cheddar Melt', 32.00, 'double-melt')" type="button">
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product 5: Onion Rings Crocantes -->
+            <div class="product-card group relative bg-bg-surface-1 rounded-2xl overflow-hidden border border-border-subtle shadow-lg hover:border-primary-container/60 hover:shadow-[0_0_24px_rgba(255,122,0,0.2)] transition-all duration-300 flex flex-col justify-between" data-category="porcoes">
+              <div class="relative w-full h-48 bg-surface-container overflow-hidden">
+                <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Onion Rings Crocantes" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA62VAJy69pd8TMLMSoN7nKG4yvw3FQi3_r-OUPbguHkWA7Y_t6AJoT7Ah6CH0TAdbDEEZBAVcmwEVTMelNY2cILUgVEzTgQuUzsxOwz4096tqw_iA5qeMoKIUl6hZDr6VVN0Ni6lB65dqTmL168LOMMQa_ZVA4ePAGnwAUL77F8zzyyABxVCrsBsrXUuqEO44wpFSeFaBYUkVia13JQBaPO4hHEuk1E0zLBZ8N55PvO6ONLpwvFT-r9Q"/>
+                <div class="absolute inset-0 bg-gradient-to-t from-bg-surface-1 via-transparent to-black/30"></div>
+              </div>
+              <div class="p-4 flex flex-col flex-1 justify-between gap-3">
+                <div>
+                  <h3 class="font-display font-bold text-base text-text-primary group-hover:text-primary-container transition-colors">Onion Rings Crocantes</h3>
+                  <p class="mt-1 text-xs text-text-secondary line-clamp-2">
+                    Anéis de cebola empanados em farinha panko japonesa crocante, com maionese defumada artesanal da casa.
+                  </p>
+                </div>
+                <div class="pt-2 flex items-center justify-between border-t border-border-subtle/40">
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-text-muted uppercase font-bold">Preço</span>
+                    <span class="font-display font-bold text-lg text-primary-container">R$ 16,00</span>
+                  </div>
+                  <button class="px-3.5 py-2 rounded-xl bg-primary-container hover:bg-accent-orange-hover text-white text-xs font-bold shadow-md hover:shadow-[0_0_14px_rgba(255,122,0,0.4)] transition-all flex items-center gap-1 active:scale-95" onclick="window.BurguerSync.addToCart('Onion Rings Crocantes', 16.00, 'rings-crisp')" type="button">
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Product 6: Milkshake de Nutella & Bacon -->
+            <div class="product-card group relative bg-bg-surface-1 rounded-2xl overflow-hidden border border-border-subtle shadow-lg hover:border-primary-container/60 hover:shadow-[0_0_24px_rgba(255,122,0,0.2)] transition-all duration-300 flex flex-col justify-between" data-category="sobremesas">
+              <div class="relative w-full h-48 bg-surface-container overflow-hidden">
+                <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Milkshake de Nutella e Bacon" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbjcx3NNhtEgFMgC-o2AODE74fdEBl9UPHE7us1k3EAp2YdFnqowHHna7Q-bsS7OGcfYIdLeo-1DqLXntLAVlnaz-R_JG1GIyV9JxAfxusSvwmPB9imOi8aaigxOZuW7oRI5OC57bPwhDzobR5bnDYpXhTQbO84QM4Zc-tXE8wAyb09lrrMszdXaw9QmqtFuB-PoL04LUuHuNg2TP7k_Jq2A3lcrapNcFT0r582spKvs5z5Wnh8x-r4w"/>
+                <div class="absolute inset-0 bg-gradient-to-t from-bg-surface-1 via-transparent to-black/30"></div>
+              </div>
+              <div class="p-4 flex flex-col flex-1 justify-between gap-3">
+                <div>
+                  <h3 class="font-display font-bold text-base text-text-primary group-hover:text-primary-container transition-colors">Milkshake de Nutella &amp; Bacon</h3>
+                  <p class="mt-1 text-xs text-text-secondary line-clamp-2">
+                    Sorvete cremoso de baunilha, farta calda de Nutella pura e farofa crocante de bacon caramelizado doce e salgado.
+                  </p>
+                </div>
+                <div class="pt-2 flex items-center justify-between border-t border-border-subtle/40">
+                  <div class="flex flex-col">
+                    <span class="text-[10px] text-text-muted uppercase font-bold">Preço</span>
+                    <span class="font-display font-bold text-lg text-primary-container">R$ 22,00</span>
+                  </div>
+                  <button class="px-3.5 py-2 rounded-xl bg-primary-container hover:bg-accent-orange-hover text-white text-xs font-bold shadow-md hover:shadow-[0_0_14px_rgba(255,122,0,0.4)] transition-all flex items-center gap-1 active:scale-95" onclick="window.BurguerSync.addToCart('Milkshake de Nutella &amp; Bacon', 22.00, 'shake-nutella')" type="button">
+                    <span class="material-symbols-outlined text-[16px]">add</span>
+                    Adicionar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- DRAWER / LATERAL DE PEDIDO & CHECKOUT -->
+        <aside class="lg:col-span-5 flex flex-col gap-4 sticky top-24">
+          <div class="w-full bg-bg-surface-1 rounded-3xl p-5 sm:p-6 border border-border-subtle shadow-2xl flex flex-col gap-5">
+            <!-- Header Sacola -->
+            <div class="flex items-center justify-between border-b border-border-subtle pb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-surface-container flex items-center justify-center border border-border-subtle">
+                  <span class="material-symbols-outlined text-primary-container text-[20px]">receipt_long</span>
+                </div>
+                <div class="flex flex-col">
+                  <h2 class="font-display font-bold text-base text-text-primary">Seu Pedido</h2>
+                  <span class="text-xs text-text-secondary">Comanda Digital Ourinhos</span>
+                </div>
+              </div>
+              <span id="cartCountBadge" class="px-2.5 py-0.5 rounded-full bg-surface-container-high text-primary-container text-xs font-bold">
+                2 itens
+              </span>
+            </div>
+
+            <!-- Cart Items List -->
+            <div id="cartItemsContainer" class="flex flex-col gap-2.5 max-h-[320px] overflow-y-auto pr-1">
+              <!-- Rendered via app.js -->
+            </div>
+
+            <!-- Financial Summary -->
+            <div class="bg-bg-surface-2 p-4 rounded-2xl flex flex-col gap-2 border border-border-subtle/50">
+              <div class="flex items-center justify-between text-xs text-text-secondary">
+                <span>Subtotal</span>
+                <span id="displaySubtotal" class="font-bold text-text-primary">R$ 46,00</span>
+              </div>
+              <div class="flex items-center justify-between text-xs text-text-secondary">
+                <span class="flex items-center gap-1">
+                  Taxa de Entrega <span class="text-[10px] text-primary-container px-1.5 py-0.5 rounded bg-surface-container">Fixa Ourinhos</span>
+                </span>
+                <span id="displayFee" class="font-bold text-text-primary">R$ 5,00</span>
+              </div>
+              <div class="pt-2 border-t border-border-subtle/40 flex items-center justify-between">
+                <div class="flex flex-col">
+                  <span class="font-display font-bold text-sm text-text-primary">Total Geral</span>
+                  <span class="text-[10px] text-text-muted">Estimativa: 25-35 min</span>
+                </div>
+                <span id="displayTotal" class="font-display font-extrabold text-xl text-secondary drop-shadow-[0_0_12px_rgba(0,230,118,0.4)]">
+                  R$ 51,00
+                </span>
+              </div>
+            </div>
+
+            <!-- Checkout Form -->
+            <form id="checkoutForm" class="flex flex-col gap-3">
+              <span class="text-[11px] text-text-muted uppercase font-bold tracking-wider">Endereço de Entrega em Ourinhos</span>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input id="custName" type="text" placeholder="Nome Completo *" required value="Lucas Moretti" class="w-full bg-bg-surface-2 rounded-xl px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted border border-border-subtle focus:outline-none focus:border-border-focus transition-colors" />
+                <input id="custPhone" type="tel" placeholder="WhatsApp (14) 99999-9999 *" required value="(14) 99872-4510" class="w-full bg-bg-surface-2 rounded-xl px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted border border-border-subtle focus:outline-none focus:border-border-focus transition-colors" />
+              </div>
+              
+              <input id="custAddress" type="text" placeholder="Rua, Número e Bairro em Ourinhos *" required value="Rua Antônio Prado, 340 - Vila Nova Sá" class="w-full bg-bg-surface-2 rounded-xl px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted border border-border-subtle focus:outline-none focus:border-border-focus transition-colors" />
+              <input id="custInstructions" type="text" placeholder="Complemento / Ponto de Referência (Opcional)" value="Apto 42 - Interfone 104" class="w-full bg-bg-surface-2 rounded-xl px-3.5 py-2.5 text-xs text-text-primary placeholder:text-text-muted border border-border-subtle focus:outline-none focus:border-border-focus transition-colors" />
+
+              <!-- Payment Method Selector -->
+              <div class="pt-1 flex flex-col gap-2">
+                <span class="text-[11px] text-text-muted uppercase font-bold tracking-wider">Forma de Pagamento</span>
+                <div class="grid grid-cols-3 gap-2">
+                  <button type="button" id="pay-pix" onclick="window.BurguerSync.setPaymentMethod('Pix')" class="p-2.5 rounded-xl bg-surface-container-high text-primary-container border border-primary-container text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all">
+                    <span class="material-symbols-outlined text-[18px]">qr_code_2</span>
+                    <span>Pix</span>
+                  </button>
+                  <button type="button" id="pay-card" onclick="window.BurguerSync.setPaymentMethod('Cartao_Entrega')" class="p-2.5 rounded-xl bg-bg-surface-2 text-text-secondary hover:text-text-primary border border-border-subtle text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all">
+                    <span class="material-symbols-outlined text-[18px]">credit_card</span>
+                    <span>Cartão</span>
+                  </button>
+                  <button type="button" id="pay-cash" onclick="window.BurguerSync.setPaymentMethod('Dinheiro_Entrega')" class="p-2.5 rounded-xl bg-bg-surface-2 text-text-secondary hover:text-text-primary border border-border-subtle text-xs font-semibold flex flex-col items-center justify-center gap-1 transition-all">
+                    <span class="material-symbols-outlined text-[18px]">payments</span>
+                    <span>Dinheiro</span>
+                  </button>
+                </div>
+
+                <!-- Dinheiro: Troco -->
+                <div id="cashChangeBox" class="hidden bg-bg-surface-2 p-3 rounded-xl border border-border-subtle flex items-center gap-2">
+                  <span class="text-xs text-text-secondary whitespace-nowrap">Troco para quanto?</span>
+                  <input id="custTroco" type="text" placeholder="Ex: R$ 100,00 ou Não preciso" class="w-full bg-surface-container rounded-lg px-2.5 py-1 text-xs text-text-primary focus:outline-none border border-border-subtle" />
+                </div>
+
+                <!-- Pix Info Box -->
+                <div id="pixInfoBox" class="bg-surface-container/60 p-3 rounded-xl border border-border-subtle flex items-center gap-2.5 text-xs text-text-secondary">
+                  <span class="material-symbols-outlined text-secondary text-[20px] shrink-0">verified</span>
+                  <span>Chave Pix da BurguerSync gerada automaticamente após confirmação.</span>
+                </div>
+              </div>
+
+              <!-- Submit CTA -->
+              <button id="btnSubmitOrder" type="submit" class="mt-2 w-full py-3.5 rounded-2xl bg-secondary hover:bg-accent-green-hover text-on-secondary font-display font-bold text-sm shadow-[0_0_20px_rgba(0,230,118,0.4)] hover:shadow-[0_0_28px_rgba(0,230,118,0.6)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer">
+                <span class="material-symbols-outlined text-[20px]">bolt</span>
+                <span>Finalizar e Enviar para Cozinha</span>
+              </button>
+              
+              <div class="flex items-center justify-center gap-1.5 text-center text-[11px] text-text-muted">
+                <span class="material-symbols-outlined text-secondary text-[14px]">sync</span>
+                <span>Sincronização instantânea com o KDS da Cozinha</span>
+              </div>
+            </form>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 2: COZINHA (KDS - KITCHEN DISPLAY SYSTEM)                            -->
+    <!-- ========================================================================= -->
+    <div id="view-cozinha" class="hidden flex-col w-full px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto">
+      <!-- KDS Header Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-border-subtle">
+        <div class="flex items-center gap-3">
+          <span id="badgeKdsActive" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container text-secondary text-xs font-bold border border-border-subtle">
+            <span class="w-2.5 h-2.5 rounded-full bg-secondary animate-ping"></span>
+            0 Pedidos Ativos
+          </span>
+          <span class="text-xs text-text-muted hidden sm:inline flex items-center gap-1">
+            <span class="material-symbols-outlined text-[14px]">location_on</span>
+            Ourinhos, SP
+          </span>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <!-- Realtime KDS Clock -->
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container-high border border-border-subtle text-text-primary">
+            <span class="material-symbols-outlined text-primary-container text-[18px]">schedule</span>
+            <div class="flex flex-col">
+              <span class="text-[9px] text-text-secondary uppercase font-bold">Relógio Cozinha</span>
+              <span id="kds-clock" class="font-mono text-xs font-bold text-text-primary tracking-wider">--:--:--</span>
+            </div>
+          </div>
+          <!-- Switch to Customer View Button -->
+          <button onclick="window.BurguerSync.switchView('cliente')" class="px-3.5 py-1.5 rounded-xl bg-surface-container hover:bg-surface-container-high border border-border-subtle text-text-primary text-xs font-bold flex items-center gap-1.5 transition-all">
+            <span class="material-symbols-outlined text-[16px] text-primary-container">restaurant_menu</span>
+            <span>Cardápio Cliente</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- KDS Title & Audio Indicator -->
+      <div class="py-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div class="flex flex-col gap-1">
+          <h1 class="font-display font-extrabold text-2xl sm:text-3xl text-text-primary tracking-tight flex items-center gap-2">
+            <span>👨‍🍳</span>
+            <span>Painel de Pedidos em Tempo Real (KDS)</span>
+          </h1>
+          <p class="text-xs sm:text-sm text-text-secondary">
+            Acompanhe a fila da chapa, controle os status operacionais e sincronize em tempo real com o Firestore.
+          </p>
+        </div>
+        <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-surface-container border border-border-subtle text-text-secondary text-xs">
+          <span class="material-symbols-outlined text-secondary text-[16px]">volume_up</span>
+          <span>Alertas Sonoros: <strong class="text-text-primary">Ativos</strong></span>
+        </div>
+      </div>
+
+      <!-- Bento Metrics Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 pb-6">
+        <div class="p-4 rounded-xl bg-surface-container border border-border-subtle shadow-md flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="text-[10px] text-text-secondary uppercase font-bold">Tempo Médio</span>
+            <span class="font-display font-bold text-xl text-text-primary mt-0.5">18 <span class="text-xs text-primary-container">min</span></span>
+            <span class="text-[11px] text-secondary flex items-center gap-0.5 mt-0.5">
+              <span class="material-symbols-outlined text-[12px]">arrow_downward</span> 2 min vs meta
+            </span>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-primary-container">
+            <span class="material-symbols-outlined text-[22px]">timer</span>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-surface-container border border-border-subtle shadow-md flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="text-[10px] text-text-secondary uppercase font-bold">Recebidos</span>
+            <span id="metricPending" class="font-display font-bold text-xl text-accent-yellow-neon mt-0.5">0</span>
+            <span class="text-[11px] text-text-muted mt-0.5">Fila de entrada</span>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-accent-yellow-neon">
+            <span class="material-symbols-outlined text-[22px]">pending_actions</span>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-surface-container border border-border-subtle shadow-md flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="text-[10px] text-text-secondary uppercase font-bold">Em Preparo</span>
+            <span id="metricPrep" class="font-display font-bold text-xl text-status-purple mt-0.5">0</span>
+            <span class="text-[11px] text-text-muted mt-0.5">Chapa &amp; Fritadeiras</span>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-status-purple">
+            <span class="material-symbols-outlined text-[22px]">skillet</span>
+          </div>
+        </div>
+
+        <div class="p-4 rounded-xl bg-surface-container border border-border-subtle shadow-md flex items-center justify-between">
+          <div class="flex flex-col">
+            <span class="text-[10px] text-text-secondary uppercase font-bold">Prontos / Saiu</span>
+            <span id="metricDispatch" class="font-display font-bold text-xl text-status-blue mt-0.5">0</span>
+            <span class="text-[11px] text-text-muted mt-0.5">Com motoboy</span>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-status-blue">
+            <span class="material-symbols-outlined text-[22px]">moped</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KDS Filter Tabs -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-6">
+        <div class="flex flex-wrap items-center gap-1.5 bg-surface-container-lowest p-1 rounded-xl border border-border-subtle">
+          <button type="button" data-kds-filter="all" class="px-3 py-1.5 rounded-lg bg-surface-container-high text-text-primary text-xs font-bold transition-colors">
+            Todos
+          </button>
+          <button type="button" data-kds-filter="Recebido" class="px-3 py-1.5 rounded-lg bg-surface-container text-accent-yellow-neon hover:bg-surface-container-high text-xs font-semibold transition-colors flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-accent-yellow-neon"></span>
+            Recebidos
+          </button>
+          <button type="button" data-kds-filter="Em Preparo" class="px-3 py-1.5 rounded-lg bg-surface-container text-status-purple hover:bg-surface-container-high text-xs font-semibold transition-colors flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-status-purple"></span>
+            Em Preparo
+          </button>
+          <button type="button" data-kds-filter="Saiu para Entrega" class="px-3 py-1.5 rounded-lg bg-surface-container text-status-blue hover:bg-surface-container-high text-xs font-semibold transition-colors flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-status-blue"></span>
+            Saiu p/ Entrega
+          </button>
+          <button type="button" data-kds-filter="Entregue" class="px-3 py-1.5 rounded-lg bg-surface-container text-secondary hover:bg-surface-container-high text-xs font-semibold transition-colors flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-secondary"></span>
+            Entregues
+          </button>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-text-muted hidden md:inline">Estação: <strong class="text-text-secondary">Chapa Principal / Expedição</strong></span>
+          <button onclick="window.location.reload()" type="button" class="p-2 rounded-xl bg-surface-container hover:bg-surface-container-high border border-border-subtle text-text-secondary hover:text-text-primary transition-colors flex items-center gap-1 text-xs">
+            <span class="material-symbols-outlined text-[16px]">sync</span>
+            <span>Recarregar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- KDS Orders Grid -->
+      <div id="kdsOrdersGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- VIEW 3: RASTREADOR DE PEDIDO                                              -->
+    <!-- ========================================================================= -->
+    <div id="view-rastreador" class="hidden flex-col w-full px-4 sm:px-6 lg:px-8 py-10 max-w-4xl mx-auto">
+      <div class="text-center flex flex-col items-center gap-3 mb-8">
+        <div class="w-12 h-12 rounded-2xl bg-surface-container border border-border-subtle flex items-center justify-center">
+          <span class="material-symbols-outlined text-primary-container text-[28px]">moped</span>
+        </div>
+        <h1 class="font-display font-extrabold text-3xl text-text-primary">Rastrear seu Pedido</h1>
+        <p class="text-sm text-text-secondary max-w-md">
+          Acompanhe em tempo real cada etapa do seu smash burger direto da chapa até a sua porta em Ourinhos.
+        </p>
+
+        <!-- Search Order Form -->
+        <form id="trackOrderForm" class="mt-4 flex items-center gap-2 w-full max-w-md">
+          <input id="trackCodeInput" type="text" placeholder="Digite o ID ou Código da Comanda..." class="flex-1 bg-bg-surface-1 rounded-xl px-4 py-3 text-xs text-text-primary placeholder:text-text-muted border border-border-subtle focus:outline-none focus:border-border-focus" />
+          <button type="submit" class="px-5 py-3 rounded-xl bg-primary-container hover:bg-accent-orange-hover text-white text-xs font-bold transition-all shadow-md">
+            Buscar
+          </button>
+        </form>
+      </div>
+
+      <!-- Tracking Results Card -->
+      <div id="trackOrderResult" class="w-full">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ORDER SUCCESS MODAL -->
+  <div id="successModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4">
+    <div class="bg-bg-surface-1 max-w-md w-full rounded-3xl p-6 sm:p-8 border border-border-subtle shadow-2xl flex flex-col items-center text-center gap-4 relative overflow-hidden">
+      <div class="absolute -top-12 -right-12 w-32 h-32 bg-secondary/20 rounded-full blur-2xl"></div>
+      
+      <div class="w-16 h-16 rounded-2xl bg-surface-container border border-border-subtle flex items-center justify-center">
+        <span class="material-symbols-outlined text-secondary text-[36px] drop-shadow-[0_0_12px_rgba(0,230,118,0.8)]">check_circle</span>
+      </div>
+
+      <div class="flex flex-col gap-1">
+        <span id="modalOrderCode" class="text-xs text-secondary uppercase tracking-widest font-bold">Comanda #CONFIRMADA</span>
+        <h3 class="font-display font-bold text-xl text-text-primary">Pedido Enviado com Sucesso!</h3>
+        <p class="text-xs text-text-secondary">
+          Sua comanda já apareceu no KDS da cozinha. Acompanhe a chapa em tempo real.
+        </p>
+      </div>
+
+      <div class="w-full bg-bg-surface-2 p-4 rounded-2xl flex items-center justify-between text-left border border-border-subtle/50">
+        <div class="flex flex-col">
+          <span class="text-[10px] text-text-muted uppercase">Total do Pedido</span>
+          <span id="modalTotal" class="font-display font-bold text-base text-text-primary">R$ 0,00</span>
+        </div>
+        <div class="flex flex-col text-right">
+          <span class="text-[10px] text-text-muted uppercase">Pagamento</span>
+          <span id="modalPaymentMethod" class="font-display font-bold text-xs text-secondary">Pix</span>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-2 w-full pt-2">
+        <button type="button" onclick="document.getElementById('successModal').classList.add('hidden'); window.BurguerSync.switchView('cozinha');" class="w-full py-3 rounded-xl bg-primary-container text-white text-xs font-bold shadow-md hover:bg-accent-orange-hover transition-colors">
+          Ver no Painel da Cozinha (KDS)
+        </button>
+        <button type="button" onclick="document.getElementById('successModal').classList.add('hidden');" class="w-full py-2.5 rounded-xl bg-surface-container text-text-secondary text-xs font-semibold hover:text-text-primary transition-colors">
+          Fechar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="w-full bg-surface-container-lowest border-t border-border-subtle/40 py-8 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center border border-border-subtle">
+          <span class="material-symbols-outlined text-primary-container text-[18px]">lunch_dining</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="font-display font-bold text-sm text-text-primary">BurguerSync <span class="text-primary-container">Ourinhos</span></span>
+          <span class="text-xs text-text-muted">Desenvolvido com Google Antigravity &amp; Firebase</span>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-center gap-6 text-xs text-text-secondary">
+        <a href="#" class="hover:text-primary-container transition-colors">Termos &amp; Condições</a>
+        <a href="#" class="hover:text-primary-container transition-colors">Privacidade</a>
+        <a href="#" class="hover:text-primary-container transition-colors">Suporte SENAI</a>
+      </div>
+
+      <div class="text-xs text-text-muted text-center md:text-right">
+        © BurguerSync Ourinhos. Todos os direitos reservados.
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Script -->
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

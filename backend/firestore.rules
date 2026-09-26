@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /pedidos/{pedidoId} {
+      // Permite leitura em tempo real para clientes e painel da cozinha (KDS)
+      allow read: if true;
+      
+      // Permite criar novos pedidos com validação de campos essenciais
+      allow create: if request.resource.data.cliente.nome != null
+                    && request.resource.data.cliente.celular != null
+                    && request.resource.data.cliente.endereco != null
+                    && request.resource.data.itens.size() > 0
+                    && request.resource.data.valores.total >= 0;
+                    
+      // Permite atualizar o status do pedido (KDS da cozinha)
+      allow update: if request.resource.data.status in ['Recebido', 'Em Preparo', 'Saiu para Entrega', 'Entregue'];
+      
+      // Bloqueia exclusões não autorizadas de comandas
+      allow delete: if false;
+    }
+  }
+}

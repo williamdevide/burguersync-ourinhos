@@ -1,0 +1,82 @@
+/* BurguerSync Ourinhos - Custom Design System & Glow Enhancements */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
+
+:root {
+  --bg-base: #0C0C0E;
+  --bg-surface-1: #16161A;
+  --bg-surface-2: #222227;
+  --surface-container: #1f1f23;
+  --surface-container-high: #2a292e;
+  --surface-container-lowest: #0e0e12;
+  --border-subtle: #2E2E36;
+  --border-focus: #FF9E00;
+  --primary-orange: #FF7A00;
+  --accent-orange-hover: #FF9E00;
+  --accent-yellow-neon: #FFD000;
+  --accent-green-neon: #00E676;
+  --accent-green-hover: #00C853;
+  --status-purple: #9D4EDD;
+  --status-blue: #2979FF;
+  --text-primary: #F4F4F6;
+  --text-secondary: #A1A1AA;
+  --text-muted: #63636E;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Custom Scrollbar for Drawer and Grid */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(14, 14, 18, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 122, 0, 0.25);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 122, 0, 0.5);
+}
+
+/* Neon Glow Utilities */
+.glow-orange {
+  box-shadow: 0 0 20px rgba(255, 122, 0, 0.4);
+}
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 230, 118, 0.4);
+}
+.glow-purple {
+  box-shadow: 0 0 16px rgba(157, 78, 221, 0.4);
+}
+.glow-yellow {
+  box-shadow: 0 0 16px rgba(255, 208, 0, 0.4);
+}
+.glow-blue {
+  box-shadow: 0 0 16px rgba(41, 121, 255, 0.4);
+}
+
+/* Micro-interactions */
+.btn-press:active {
+  transform: scale(0.97);
+}
+
+/* Pulse Animations */
+@keyframes neon-pulse {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 8px currentColor); }
+  50% { opacity: 0.7; filter: drop-shadow(0 0 2px currentColor); }
+}
+
+.animate-neon-pulse {
+  animation: neon-pulse 2s infinite ease-in-out;
+}
